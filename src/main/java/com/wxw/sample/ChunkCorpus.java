@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class ChunkCorpus implements Iterable<List<TaggedToken<String, String>>>{
 	
 	private List<List<TaggedToken<String, String>>> read(File file) throws IOException {
 		List<List<TaggedToken<String, String>>> samples = new ArrayList<>();
-		InputStreamReader ireader = new InputStreamReader(new FileInputStream(file), "utf8");
+		InputStreamReader ireader = new InputStreamReader(new FileInputStream(file), "gbk");
 		BufferedReader reader = new BufferedReader(ireader);
 		
 		String line = null;
@@ -66,12 +67,14 @@ public class ChunkCorpus implements Iterable<List<TaggedToken<String, String>>>{
 		String[] wordTag = null;							//词与词性标注
 		String chunk = null;								//组块的标签
 		String[] content = sentence.split("\\s+");
+		System.out.println(Arrays.asList(content).toString());
 		for(String string : content) {
 			if(isInChunk) {	//当前词在组块中
 				if(string.contains("]")) {//当前词是组块的结束
 					String[] strings = string.split("]");
 					wordTagsInChunk.add(strings[0]);
 					chunk = strings[1];
+					
 					isInChunk = false;
 				}else {
 					wordTagsInChunk.add(string);
@@ -106,7 +109,7 @@ public class ChunkCorpus implements Iterable<List<TaggedToken<String, String>>>{
 						wordTag = string.split("/");
 						words.add(wordTag[0]);
 						poses.add(wordTag[1]);
-						chunkTags.add("_O");
+						chunkTags.add("O");
 					}
 					
 				}else {
@@ -117,7 +120,7 @@ public class ChunkCorpus implements Iterable<List<TaggedToken<String, String>>>{
 						wordTag = string.split("/");
 						words.add(wordTag[0]);
 						poses.add(wordTag[1]);
-						chunkTags.add("_O");
+						chunkTags.add("O");
 					}
 				}
 			}
@@ -143,5 +146,82 @@ public class ChunkCorpus implements Iterable<List<TaggedToken<String, String>>>{
 			poses.add(wordTag[1]);
 			chunkTags.add(chunk + "_E");
 		}
+	}
+	
+	/**
+     * 对基于字的得到对应的命名实体标注序列
+     * @param tagsandposesPre 字的边界_命名实体标注 这种格式组成的序列
+     * @return
+     */
+	public static String[] toChunkTag(String[] tagsandposesPre) {
+		List<String> poses = new ArrayList<String>();
+		int i = 0;
+		while(i < tagsandposesPre.length){
+			if(tagsandposesPre[i].equals("O")){
+				poses.add(tagsandposesPre[i]);
+				
+				while(tagsandposesPre[i].equals("O")){
+					i++;
+					if(i == tagsandposesPre.length){
+						break;
+					}
+				}				
+			}else{
+				String tag = tagsandposesPre[i].split("_")[1];
+				String pos = tagsandposesPre[i].split("_")[0];
+				if(tag.equals("B")){
+					poses.add(pos);					
+				}else if(tag.equals("I")){
+					
+				}else if(tag.equals("E")){
+					
+				}else if(tag.equals("S")){
+					poses.add(pos);
+				}
+				i++;
+				if(i == tagsandposesPre.length){
+					break;
+				}
+			}
+		}
+		return poses.toArray(new String[poses.size()]);
+	}
+	
+	/**
+     * 得到对应的分词序列
+     * @param characters 基于字的是字符序列，如果是基于词的就是词语序列
+     * @param tagsandposesPre 字的边界_实体标记 这种格式组成的序列
+     * @return
+     */
+	public static String[] toChunkToken(String[] characters, String[] tagsandposesPre) {
+		String word = new String();
+        ArrayList<String> words = new ArrayList<String>();       
+		int i = 0;
+		while(i < tagsandposesPre.length){
+			if(tagsandposesPre[i].equals("O")){				
+				while(tagsandposesPre[i].equals("O")){
+					word += characters[i];
+					i++;
+					if(i == tagsandposesPre.length){
+						break;
+					}
+				}
+				words.add(word);
+				word = "";
+			}else{
+				word += characters[i];
+				String tag = tagsandposesPre[i].split("_")[1];
+
+				 if (tag.equals("S") || tag.equals("B")) {
+		                words.add(word);
+		                word = "";
+		            }
+				i++;
+				if(i == tagsandposesPre.length){
+					break;
+				}
+			}
+		}
+        return words.toArray(new String[words.size()]);
 	}
 }

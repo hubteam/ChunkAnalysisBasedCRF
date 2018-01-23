@@ -7,10 +7,9 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.asher_stern.crf.postagging.postaggers.PosTagger;
-import com.asher_stern.crf.utilities.CrfException;
 import com.asher_stern.crf.utilities.TaggedToken;
 import com.wxw.chunktagger.ChunkTagger;
+import com.wxw.sample.ChunkCorpus;
 
 /**
  * 
@@ -27,10 +26,6 @@ public class ChunkEvaluate {
 	private List<String> tagsRef = new ArrayList<>();
 	private List<String> wordsPre = new ArrayList<>();
 	private List<String> tagsPre = new ArrayList<>();
-	
-	private long correct = 0;
-	private long incorrect = 0;
-	private double accuracy = 0.0;
 	
 	private static final Logger logger = Logger.getLogger(ChunkEvaluate.class);
 	
@@ -67,7 +62,13 @@ public class ChunkEvaluate {
 			//得到的结果
 			List<TaggedToken<String,String>> taggedByPosTagger = chunkTagger.tagSentence(sentence);
 			taggedSentenceToSentencePre(taggedByPosTagger);
-			
+			String[] chunkTokenRef = ChunkCorpus.toChunkToken(wordsRef.toArray(new String[wordsRef.size()]), 
+					tagsRef.toArray(new String[tagsRef.size()]));
+			String[] chunkTagsRef = ChunkCorpus.toChunkTag(tagsRef.toArray(new String[tagsRef.size()]));
+			String[] chunkTokenPre = ChunkCorpus.toChunkToken(wordsPre.toArray(new String[wordsPre.size()]), 
+					tagsPre.toArray(new String[tagsPre.size()]));
+			String[] chunkTagsPre = ChunkCorpus.toChunkTag(tagsPre.toArray(new String[tagsPre.size()]));
+			measure.update(chunkTokenRef, chunkTagsRef, chunkTokenPre, chunkTagsPre);
 //			evaluateSentence(taggedSentence,taggedByPosTagger);
 			
 //			if (taggedTestWriter!=null)
@@ -86,6 +87,7 @@ public class ChunkEvaluate {
 //		if (taggedTestWriter!=null) {taggedTestWriter.flush();}
 		
 //		accuracy = ((double)correct)/((double)(correct+incorrect));
+		System.out.println(measure.toString());
 	}
 
 //	private void evaluateSentence(List<? extends TaggedToken<String,String>> taggedSentence, List<TaggedToken<String,String>> taggedByPosTagger)
@@ -112,15 +114,15 @@ public class ChunkEvaluate {
 //		}
 //	}
 	
-	private String printSentence(List<? extends TaggedToken<String,String>> taggedSentence)
-    {
-		StringBuilder sb = new StringBuilder();
-		for (TaggedToken<String,String> taggedToken : taggedSentence)
-		{
-			sb.append(taggedToken.getToken()).append("/").append( String.format("%-4s", taggedToken.getTag()) ).append(" ");
-		}
-		return sb.toString();
-	}
+//	private String printSentence(List<? extends TaggedToken<String,String>> taggedSentence)
+//    {
+//		StringBuilder sb = new StringBuilder();
+//		for (TaggedToken<String,String> taggedToken : taggedSentence)
+//		{
+//			sb.append(taggedToken.getToken()).append("/").append( String.format("%-4s", taggedToken.getTag()) ).append(" ");
+//		}
+//		return sb.toString();
+//	}
 	
 	private List<String> taggedSentenceToSentence(List<? extends TaggedToken<String, String>> taggedSentence)
 	{

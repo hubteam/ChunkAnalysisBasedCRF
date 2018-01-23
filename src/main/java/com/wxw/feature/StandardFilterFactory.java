@@ -118,6 +118,6 @@ public class StandardFilterFactory implements FilterFactory<String, String>{
 		if(w1 != null){
 			ret.add(new TokenAndTagFilter<String, String>(w0+w1+p1, currentTag));
 		}
-		return null;
+		return ret;
 	}
 }
